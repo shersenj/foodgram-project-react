@@ -1,6 +1,28 @@
 version: '3.3'
-services:
 
+volumes:
+  food_pg_data:
+  static:
+  recipes_migrations:
+  users_migrations:
+  media:
+
+services:
+  db:
+    image: postgres:13.10
+    env_file: ../.env
+    volumes:
+      - food_pg_data:/var/lib/postgresql/data
+  backend:
+    depends_on:
+      - db
+    build: ../backend/
+    env_file: ../.env
+    volumes:
+      - static:/app/static/
+      - media:/app/media/
+      - recipes_migrations:/app/recipes/migrations/
+      - users_migrations:/app/users/migrations/
   frontend:
     build:
       context: ../frontend
@@ -12,6 +34,8 @@ services:
     ports:
       - "80:80"
     volumes:
+      - static:/var/html/static/
+      - media:/var/html/media/
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ../frontend/build:/usr/share/nginx/html/
       - ../docs/:/usr/share/nginx/html/api/docs/
