@@ -54,7 +54,7 @@ class CustomUser(AbstractUser):
         validators=[custom_username_validator],
         error_messages={
             'unique': ERROR_MSG_USERNAME,
-            }
+        }
     )
     first_name = models.CharField(
         max_length=150,
