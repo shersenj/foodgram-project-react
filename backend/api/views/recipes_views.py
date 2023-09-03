@@ -1,6 +1,6 @@
 from recipes.models import (
     Tag, Ingredient, Recipe, ShoppingCart, RecipeIngredient, Favorite
-    )
+)
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework import viewsets, permissions, status
@@ -10,7 +10,7 @@ from api.serializers import (
     TagSerializer, IngredientSerializer,
     RecipeSerializer, RecipeCreateSerializer,
     ShoppingCartSerializer, FavoriteSerializer
-    )
+)
 from ..filters import RecipeFilter, IngredientSearchFilter
 from ..utils import create_shopping_cart
 from django.db.models import Sum

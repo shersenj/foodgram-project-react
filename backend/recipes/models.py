@@ -56,13 +56,13 @@ class Ingredient(models.Model):
         blank=False,
         null=False,
         verbose_name='Название'
-        )
+    )
     measurement_unit = models.CharField(
         max_length=20,
         blank=False,
         null=False,
         verbose_name='Единицы измерения'
-        )
+    )
 
     class Meta:
         verbose_name = 'Ингредиент'
@@ -96,46 +96,46 @@ class Recipe(models.Model):
         blank=False,
         null=False,
         verbose_name='Автор'
-        )
+    )
     name = models.CharField(
         max_length=200,
         blank=False,
         null=False,
         verbose_name='Название'
-        )
+    )
     image = models.ImageField(
         upload_to='recipes/',
         blank=False,
         null=False,
         verbose_name='Картинка'
-        )
+    )
     text = models.TextField(
         blank=False,
         null=False,
         verbose_name='Описание'
-        )
+    )
     ingredients = models.ManyToManyField(
         Ingredient,
         related_name='recipes',
         through='RecipeIngredient',
         verbose_name='Ингредиенты'
-        )
+    )
     tags = models.ManyToManyField(
         Tag,
         related_name='recipes',
         blank=False,
         verbose_name='Теги'
-        )
+    )
     cooking_time = models.PositiveIntegerField(
         blank=False,
         null=False,
         verbose_name='Время приготовления (минуты)'
-        )
+    )
     pub_date = models.DateTimeField(
         auto_now_add=True,
         editable=False,
         verbose_name='Дата публикации'
-        )
+    )
 
     class Meta:
         verbose_name = 'Рецепт'
@@ -160,17 +160,17 @@ class RecipeIngredient(models.Model):
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='Рецепт'
-        )
+    )
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
         verbose_name='Ингредиент'
-        )
+    )
     amount = models.DecimalField(
         max_digits=6,
         decimal_places=2,
         verbose_name='Количество'
-        )
+    )
 
     class Meta:
         verbose_name = 'Ингредиент для рецепта'
@@ -181,7 +181,7 @@ class RecipeIngredient(models.Model):
         return (
             f'{self.amount} '
             f'{self.ingredient} для {self.recipe}'
-            )
+        )
 
 
 class Favorite(models.Model):
@@ -209,7 +209,7 @@ class Favorite(models.Model):
     added_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Дата добавления'
-        )
+    )
 
     class Meta:
         unique_together = ('user', 'recipe')

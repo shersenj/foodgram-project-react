@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from users.models import CustomUser, AuthorSubscription
 from api.serializers import (
     CustomUserSerializer, SubscriptionShowSerializer, SubscriptionSerializer
-    )
+)
 from api.permissions import AnonimOrAuthenticatedReadOnly
 from rest_framework import status, permissions
 from rest_framework.pagination import PageNumberPagination

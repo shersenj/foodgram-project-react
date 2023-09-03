@@ -3,7 +3,7 @@ from drf_extra_fields.fields import Base64ImageField
 from users.models import CustomUser, AuthorSubscription
 from recipes.models import (
     Tag, Ingredient, Recipe, RecipeIngredient, ShoppingCart, Favorite
-    )
+)
 from djoser.serializers import UserSerializer, UserCreateSerializer
 
 
@@ -324,7 +324,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         many=True,
         read_only=True,
         source='recipeingredient_set'
-        )
+    )
     image = Base64ImageField()
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
     is_favorited = serializers.SerializerMethodField(read_only=True)

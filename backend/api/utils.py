@@ -23,7 +23,7 @@ def create_shopping_cart(ingredients_cart):
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = (
         'attachment; filename="shopping_cart.pdf"'
-        )
+    )
     pdfmetrics.registerFont(TTFont('Arial', 'data/arial.ttf', 'UTF-8'))
     buffer = io.BytesIO()
     pdf_file = canvas.Canvas(buffer)

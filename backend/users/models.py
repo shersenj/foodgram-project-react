@@ -12,7 +12,7 @@ custom_username_validator = UnicodeUsernameValidator(
     message='Введите корректное имя пользователя.'
             'Это значение может содержать только буквы,'
             'цифры и символы: @/./+/-/_'
-            )
+)
 
 
 class CustomUser(AbstractUser):
@@ -44,7 +44,7 @@ class CustomUser(AbstractUser):
             'unique': ERROR_MSG_EMAIL},
         blank=False,
         null=False
-        )
+    )
     username = models.CharField(
         max_length=150,
         verbose_name='Имя пользователя',
@@ -55,19 +55,19 @@ class CustomUser(AbstractUser):
         error_messages={
             'unique': ERROR_MSG_USERNAME,
             }
-        )
+    )
     first_name = models.CharField(
         max_length=150,
         blank=False,
         null=False,
         verbose_name='Имя'
-        )
+    )
     last_name = models.CharField(
         max_length=150,
         blank=False,
         null=False,
         verbose_name='Фамилия'
-        )
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = (

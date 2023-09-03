@@ -17,14 +17,14 @@ class CustomUserAdmin(BaseUserAdmin):
         'last_name',
         'is_staff',
         'is_active'
-        )
+    )
     list_filter = ('username', 'email')
     search_fields = (
         'username',
         'email',
         'first_name',
         'last_name'
-        )
+    )
     ordering = ('username',)
 
 
