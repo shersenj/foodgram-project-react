@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models import UniqueConstraint
 from django.core.validators import EmailValidator
 from django.contrib.auth.validators import UnicodeUsernameValidator
 
@@ -117,7 +118,12 @@ class AuthorSubscription(models.Model):
     )
 
     class Meta:
-        unique_together = ('author', 'subscriber')
+        constraints = [
+            UniqueConstraint(
+                fields=['author', 'subscriber'],
+                name='unique_author_subscription'
+            )
+        ]
         verbose_name = 'Подписка на автора'
         verbose_name_plural = 'Подписки на авторов'
 

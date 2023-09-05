@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.db import transaction
 from drf_extra_fields.fields import Base64ImageField
 from users.models import CustomUser, AuthorSubscription
 from recipes.models import (
@@ -7,7 +8,7 @@ from recipes.models import (
 from djoser.serializers import UserSerializer, UserCreateSerializer
 
 
-RECIPES_LIMIT = 2
+RECIPES_LIMIT: int = 2
 
 
 class CustomUserSerializer(UserSerializer):
@@ -42,6 +43,14 @@ class CustomUserSerializer(UserSerializer):
 
     is_subscribed = serializers.SerializerMethodField(read_only=True)
 
+    def get_is_subscribed(self, object):
+        request = self.context.get('request')
+        return (
+            request is not None
+            and not request.user.is_anonymous
+            and object.author.filter(subscriber=request.user).exists()
+        )
+
     class Meta:
         model = CustomUser
         fields = (
@@ -52,12 +61,6 @@ class CustomUserSerializer(UserSerializer):
             'last_name',
             'is_subscribed'
         )
-
-    def get_is_subscribed(self, object):
-        request = self.context.get('request')
-        if request is None or request.user.is_anonymous:
-            return False
-        return object.author.filter(subscriber=request.user).exists()
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
@@ -93,6 +96,13 @@ class CustomUserCreateSerializer(UserCreateSerializer):
             - `serializers.ValidationError`: Если имя пользователя 'me'.
     """
 
+    def validate(self, data):
+        if data.get('username') == 'me':
+            raise serializers.ValidationError(
+                'Использовать имя me запрещено'
+            )
+        return data
+
     class Meta:
         model = CustomUser
         fields = (
@@ -104,13 +114,6 @@ class CustomUserCreateSerializer(UserCreateSerializer):
             'password'
         )
         extra_kwargs = {'password': {'write_only': True}}
-
-    def validate(self, data):
-        if data.get('username') == 'me':
-            raise serializers.ValidationError(
-                'Использовать имя me запрещено'
-            )
-        return data
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
@@ -127,7 +130,10 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AuthorSubscription
-        fields = '__all__'
+        fields = (
+            'subscriber',
+            'author'
+        )
 
 
 class SubscriptionShowSerializer(CustomUserSerializer):
@@ -178,6 +184,15 @@ class SubscriptionShowSerializer(CustomUserSerializer):
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
+    def get_recipes(self, object):
+        author_recipes = object.recipes.all()[:RECIPES_LIMIT]
+        return RecipeSerializer(
+            author_recipes, many=True
+        ).data
+
+    def get_recipes_count(self, object):
+        return object.recipes.count()
+
     class Meta:
         model = CustomUser
         fields = (
@@ -190,15 +205,6 @@ class SubscriptionShowSerializer(CustomUserSerializer):
             'recipes',
             'recipes_count'
         )
-
-    def get_recipes(self, object):
-        author_recipes = object.recipes.all()[:RECIPES_LIMIT]
-        return RecipeSerializer(
-            author_recipes, many=True
-        ).data
-
-    def get_recipes_count(self, object):
-        return object.recipes.count()
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -213,7 +219,12 @@ class TagSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Tag
-        fields = '__all__'
+        fields = (
+            'id',
+            'name',
+            'color',
+            'slug'
+        )
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -228,7 +239,11 @@ class IngredientSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Ingredient
-        fields = '__all__'
+        fields = (
+            'id',
+            'name',
+            'measurement_unit'
+        )
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
@@ -267,11 +282,16 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     amount = serializers.IntegerField(
         required=True,
-        write_only=True,)
+        write_only=True,
+        min_value=1,
+    )
 
     class Meta:
         model = RecipeIngredient
-        fields = ('id', 'amount')
+        fields = (
+            'id',
+            'amount'
+        )
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -329,23 +349,37 @@ class RecipeSerializer(serializers.ModelSerializer):
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
     is_favorited = serializers.SerializerMethodField(read_only=True)
 
-    class Meta:
-        model = Recipe
-        fields = '__all__'
-
     def get_is_in_shopping_cart(self, object):
-
         request = self.context.get('request')
-        if request is None or request.user.is_anonymous:
-            return False
-        return request.user.shopping_cart.filter(recipe=object).exists()
+        return (
+            request is not None
+            and not request.user.is_anonymous
+            and request.user.shopping_cart.filter(recipe=object).exists()
+        )
 
     def get_is_favorited(self, object):
-
         request = self.context.get('request')
-        if request is None or request.user.is_anonymous:
-            return False
-        return request.user.favoriting.filter(recipe=object).exists()
+        return (
+            request is not None
+            and not request.user.is_anonymous
+            and request.user.favoriting.filter(recipe=object).exists()
+        )
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            'tags',
+            'author',
+            'ingredients',
+            'image',
+            'is_in_shopping_cart',
+            'is_favorited',
+            'name',
+            'text',
+            'cooking_time',
+            'pub_date'
+        )
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
@@ -402,12 +436,8 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     author = CustomUserSerializer(read_only=True)
     image = Base64ImageField(required=False)
 
-    class Meta:
-        model = Recipe
-        fields = '__all__'
-
     @staticmethod
-    def add_ingredients(ingredients_data, recipe):
+    def __add_ingredients(ingredients_data, recipe):
 
         RecipeIngredient.objects.bulk_create([
             RecipeIngredient(
@@ -418,16 +448,22 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             for ingredient in ingredients_data
         ])
 
+    @transaction.atomic
+    # Я думаю, что tags_data и ingredients_data
+    # Уже не надо обрабатывать, так как @transaction.atomic
+    # Не позволит создать объект, если что-то пойдет не так
+    # PS Я удалю эти коментарии, просто как-то надо донести мысль)))
+    # PPS Спасибо за подсказку с @transaction.atomic)))
     def create(self, validated_data):
-
         author = self.context.get('request').user
         tags_data = validated_data.pop('tags')
         ingredients_data = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(author=author, **validated_data)
         recipe.tags.set(tags_data)
-        self.add_ingredients(ingredients_data, recipe)
+        self.__add_ingredients(ingredients_data, recipe)
         return recipe
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         recipe = instance
         instance.image = validated_data.get('image', instance.image)
@@ -442,9 +478,23 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         instance.tags.set(tags_data)
         ingredients_data = validated_data.get('ingredients')
         RecipeIngredient.objects.filter(recipe=recipe).delete()
-        self.add_ingredients(ingredients_data, recipe)
+        self.__add_ingredients(ingredients_data, recipe)
         instance.save()
         return instance
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            'tags',
+            'ingredients',
+            'author',
+            'image',
+            'name',
+            'text',
+            'cooking_time',
+            'pub_date'
+        )
 
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
@@ -460,7 +510,10 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = ShoppingCart
-        fields = '__all__'
+        fields = (
+            'user',
+            'recipe'
+        )
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
@@ -476,4 +529,8 @@ class FavoriteSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Favorite
-        fields = '__all__'
+        fields = (
+            'user',
+            'recipe',
+            'added_at'
+        )
