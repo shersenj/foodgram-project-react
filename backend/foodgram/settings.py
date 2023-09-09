@@ -7,7 +7,7 @@ SECRET_KEY = 'django-insecure-g3s9(&9y7g188lu#)q3kx!)w80b20n0+h@had=@c5ha__^!**=
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 INSTALLED_APPS = [
@@ -127,3 +127,5 @@ DJOSER = {
         'user_list': ['rest_framework.permissions.AllowAny'],
     },
 }
+
+CSRF_TRUSTED_ORIGINS = ['https://158.160.13.53', 'https://foodgram-yasha.ddns.net']

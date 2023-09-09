@@ -19,7 +19,7 @@ class Command(BaseCommand):
 
                 ingredient, created = Ingredient.objects.get_or_create(
                     name=ingredient_name,
-                    unit=ingredient_unit
+                    measurement_unit=ingredient_unit
                 )
 
                 self.stdout.write(self.style.SUCCESS(

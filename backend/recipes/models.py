@@ -5,6 +5,7 @@ from .validators import (
     validate_hex_color,
     validate_slug,
     validate_positive_integer,
+    validate_name,
 )
 
 
@@ -23,7 +24,8 @@ class Tag(models.Model):
         unique=True,
         blank=False,
         null=False,
-        verbose_name='Название'
+        verbose_name='Название',
+        validators=[validate_name]
     )
     color = models.CharField(
         max_length=7,

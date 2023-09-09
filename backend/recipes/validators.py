@@ -36,3 +36,17 @@ def validate_positive_integer(value):
         min_value_validator(value)
     except ValidationError as e:
         raise ValidationError(e.message)
+
+
+def validate_name(value):
+    regex_validator = RegexValidator(
+        regex=r'^[А-ЯЁ][а-яё]*$',
+        message=(
+            'Название должно начинаться с заглавной русской буквы,'
+            'а затем использовать только строчные русские буквы.'
+        ),
+    )
+    try:
+        regex_validator(value)
+    except ValidationError as e:
+        raise ValidationError(e.message)

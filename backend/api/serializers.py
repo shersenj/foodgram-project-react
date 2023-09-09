@@ -345,7 +345,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         read_only=True,
         source='recipeingredient_set'
     )
-    image = Base64ImageField()
+    image = serializers.ReadOnlyField(source='image.url')
     is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
     is_favorited = serializers.SerializerMethodField(read_only=True)
 
@@ -449,11 +449,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         ])
 
     @transaction.atomic
-    # Я думаю, что tags_data и ingredients_data
-    # Уже не надо обрабатывать, так как @transaction.atomic
-    # Не позволит создать объект, если что-то пойдет не так
-    # PS Я удалю эти коментарии, просто как-то надо донести мысль)))
-    # PPS Спасибо за подсказку с @transaction.atomic)))
     def create(self, validated_data):
         author = self.context.get('request').user
         tags_data = validated_data.pop('tags')
